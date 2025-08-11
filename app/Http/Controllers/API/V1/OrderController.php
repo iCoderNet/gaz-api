@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendOrderNotificationJob;
+use App\Services\TelegramBotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -16,6 +18,7 @@ use App\Models\AdditionalService;
 use App\Models\Azot;
 use App\Models\Cart;
 use App\Models\Promocode;
+use App\Models\Setting;
 use App\Models\User;
 use DB;
 
@@ -292,7 +295,7 @@ class OrderController extends Controller
             'phone'        => 'nullable|string|max:255',
             'address'      => 'nullable|string',
             'comment'      => 'nullable|string',
-            'cargo_price'  => 'nullable|numeric|min:0',
+            'cargo_with'  => 'nullable|boolean',
         ]);
 
         $userId = User::where('tg_id', $data['tg_id'])->value('id');
@@ -307,7 +310,8 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            $cargoPrice = $data['cargo_price'] ? 500 : 0;
+            $cargoPrice = !empty($data['cargo_with']) ? Setting::get('cargo_price', 500) : 0;
+
 
             $order = Order::create([
                 'user_id'     => $userId,
@@ -406,8 +410,10 @@ class OrderController extends Controller
             $order->update([
                 'all_price'   => $allPrice,
                 'promo_price' => $promoDiscount,
-                'total_price' => max($allPrice + ($data['cargo_price'] ?? 0) - $promoDiscount, 0),
+                'total_price' => max($allPrice + ($cargoPrice ?? 0) - $promoDiscount, 0),
             ]);
+
+            SendOrderNotificationJob::dispatch($order->id, $userId, $data);
 
             // Cartni tozalash
             Cart::where('user_id', $userId)->delete();

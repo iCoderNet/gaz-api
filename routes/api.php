@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\AccessoryController;
 use App\Http\Controllers\API\V1\AdditionalServiceController;
 use App\Http\Controllers\API\V1\AuthenticationController;
 use App\Http\Controllers\API\V1\AzotController;
+use App\Http\Controllers\API\V1\TelegramMessageController;
 use App\Http\Controllers\API\V1\UserController;
 use App\Http\Controllers\API\V1\AzotPriceTypeController;
 use App\Http\Controllers\API\V1\CartController;
@@ -83,6 +84,12 @@ Route::group(['prefix' => 'api/v1'], function () {
         Route::apiResource('orders', OrderController::class);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::post('/settings/save', [SettingController::class, 'save']);
+
+        Route::prefix('tg-messages')->name('tg-messages.')->group(function () {
+            Route::get('/', [TelegramMessageController::class, 'index'])->name('index');
+            Route::post('/', [TelegramMessageController::class, 'store'])->name('store');
+            Route::get('/{batch}', [TelegramMessageController::class, 'show'])->name('show');
+        });
     });
 
 });

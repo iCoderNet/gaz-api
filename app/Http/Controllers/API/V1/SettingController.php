@@ -16,8 +16,11 @@ class SettingController extends Controller
             'require_phone_on_order' => true,
             'site_title' => 'My Site',
             'site_logo' => asset('images/default-logo.png'),
+            'cargo_price' => 500,
             'bot_token' => "TOKEN",
+            'order_notification' => "Новый заказ создан ✅",
             'chat_id' => "ID NUMBER",
+
         ];
 
         $settings = Setting::whereIn('key', array_keys($defaults))->pluck('value', 'key')->toArray();
@@ -47,7 +50,9 @@ class SettingController extends Controller
             'require_phone_on_order' => 'nullable|boolean',
             'site_title' => 'nullable|string|max:255',
             'site_logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'cargo_price' => 'nullable|numeric|min:0',
             'bot_token' => 'nullable|string',
+            'order_notification' => 'nullable|string|max:255',
             'chat_id' => 'nullable|string',
         ]);
 
@@ -77,6 +82,7 @@ class SettingController extends Controller
             'require_phone_on_order' => true,
             'site_title' => 'My Site',
             'site_logo' => asset('images/default-logo.png'),
+            'cargo_price' => 500,
         ];
 
         $settings = Setting::whereIn('key', array_keys($defaults))->pluck('value', 'key')->toArray();
