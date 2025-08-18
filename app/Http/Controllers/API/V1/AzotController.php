@@ -80,7 +80,7 @@ class AzotController extends Controller
         $data = $request->validate([
             'title' => 'required|string',
             'type' => 'required|string',
-            'image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|file|file|mimes:jpeg,png,jpg,gif,webp,bmp,tiff,svg|max:30720',
             'description' => 'nullable|string',
             'country' => 'required|string',
             'status' => ['nullable', Rule::in(['active', 'archive'])],
@@ -124,7 +124,7 @@ class AzotController extends Controller
         $data = $request->validate([
             'title' => 'required|string',
             'type' => 'required|string',
-            'image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|file|file|mimes:jpeg,png,jpg,gif,webp,bmp,tiff,svg|max:30720',
             'description' => 'nullable|string',
             'country' => 'required|string',
             'status' => ['nullable', Rule::in(['active', 'archive'])],

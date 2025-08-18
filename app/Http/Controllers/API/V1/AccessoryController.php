@@ -64,7 +64,7 @@ class AccessoryController extends Controller
         $data = $request->validate([
             'title' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|file|file|mimes:jpeg,png,jpg,gif,webp,bmp,tiff,svg|max:30720',
             'description' => 'nullable|string',
             'status' => ['nullable', Rule::in(['active', 'archive'])],
         ]);
@@ -100,7 +100,7 @@ class AccessoryController extends Controller
         $data = $request->validate([
             'title' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
-            'image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|file|file|mimes:jpeg,png,jpg,gif,webp,bmp,tiff,svg|max:30720',
             'description' => 'nullable|string',
             'status' => ['nullable', Rule::in(['active', 'archive'])],
         ]);
