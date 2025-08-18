@@ -163,6 +163,7 @@ API’dan foydalanishning ikki turi mavjud:
 - `search` (ixtiyoriy, string): Qidiruv so‘zi
 - `type` (ixtiyoriy, string): Azot turi
 - `country` (ixtiyoriy, string): Ishlab chiqaruvchi davlat
+- `price_type` (ixtiyoriy, string): Narx turi bo‘yicha saralash
 - `sort_by` (ixtiyoriy, id|title|type|country|created_at): Saralash maydoni
 - `sort_order` (ixtiyoriy, asc|desc): Saralash tartibi
 
@@ -1009,6 +1010,7 @@ API’dan foydalanishning ikki turi mavjud:
 - `type` (ixtiyoriy, string)
 - `country` (ixtiyoriy, string)
 - `status` (ixtiyoriy, active|archive)
+- `price_type` (ixtiyoriy, string): Narx turi bo‘yicha saralash
 - `sort_by` (ixtiyoriy, id|title|type|country|created_at)
 - `sort_order` (ixtiyoriy, asc|desc)
 

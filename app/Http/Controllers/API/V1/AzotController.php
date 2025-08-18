@@ -21,6 +21,7 @@ class AzotController extends Controller
             'country'    => 'string|nullable',
             'status'     => 'in:active,archive',
             'sort_by'    => 'in:id,title,type,country,created_at',
+            'price_type' => 'string|nullable',
             'sort_order' => 'in:asc,desc',
         ]);
 
@@ -37,6 +38,7 @@ class AzotController extends Controller
         $country   = request()->get('country');
         $status    = request()->get('status');
         $sortBy    = request()->get('sort_by', 'id');
+        $priceType = request()->get('price_type');
         $sortOrder = request()->get('sort_order', 'desc');
 
         $query = Azot::where('status', '!=', 'deleted')->with('priceTypes');
@@ -63,6 +65,13 @@ class AzotController extends Controller
         if ($status) {
             $query->where('status', $status);
         }
+
+        if ($priceType) {
+            $query->whereHas('priceTypes', function ($q) use ($priceType) {
+                $q->where('name', $priceType);
+            });
+        }
+
 
         // 🔃 Sort
         $query->orderBy($sortBy, $sortOrder);
@@ -190,6 +199,7 @@ class AzotController extends Controller
             'search'     => 'string|nullable',
             'type'       => 'string|nullable',
             'country'    => 'string|nullable',
+            'price_type' => 'string|nullable',
             'sort_by'    => 'in:id,title,type,country,created_at',
             'sort_order' => 'in:asc,desc',
         ]);
@@ -205,6 +215,7 @@ class AzotController extends Controller
         $search    = request()->get('search');
         $type      = request()->get('type');
         $country   = request()->get('country');
+        $priceType = request()->get('price_type');
         $sortBy    = request()->get('sort_by', 'id');
         $sortOrder = request()->get('sort_order', 'desc');
 
@@ -227,6 +238,12 @@ class AzotController extends Controller
 
         if ($country) {
             $query->where('country', $country);
+        }
+
+        if ($priceType) {
+            $query->whereHas('priceTypes', function ($q) use ($priceType) {
+                $q->where('name', $priceType);
+            });
         }
 
         // 🔃 Sort
