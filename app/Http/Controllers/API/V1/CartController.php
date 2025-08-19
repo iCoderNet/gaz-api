@@ -47,7 +47,8 @@ class CartController extends Controller
                             'name'       => $product->title,
                             'price_type' => $priceType->name,
                             'price'      => $priceType->price,
-                            'quantity'   => $item->quantity
+                            'quantity'   => $item->quantity,
+                            'product'    => $product
                         ];
                         $totalPrice += $priceType->price * $item->quantity;
                     }
@@ -60,7 +61,8 @@ class CartController extends Controller
                             'product_id' => $product->id,
                             'name'       => $product->name,
                             'price'      => $product->price,
-                            'quantity'   => $item->quantity
+                            'quantity'   => $item->quantity,
+                            'product'    => $product
                         ];
                         $totalPrice += $product->price * $item->quantity;
                     }
@@ -72,7 +74,8 @@ class CartController extends Controller
                         $services[] = [
                             'service_id' => $service->id,
                             'name'       => $service->name,
-                            'price'      => $service->price
+                            'price'      => $service->price,
+                            'service'    => $service
                         ];
                         $totalPrice += $service->price;
                     }
