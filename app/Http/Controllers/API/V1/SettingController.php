@@ -49,7 +49,7 @@ class SettingController extends Controller
             'enable_promocode' => 'nullable|boolean',
             'require_phone_on_order' => 'nullable|boolean',
             'site_title' => 'nullable|string|max:255',
-            'site_logo' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,bmp,tiff,svg|max:30720',
+            'site_logo' => 'nullable',
             'cargo_price' => 'nullable|numeric|min:0',
             'bot_token' => 'nullable|string',
             'order_notification' => 'nullable|string|max:255',
@@ -60,7 +60,10 @@ class SettingController extends Controller
         if ($request->hasFile('site_logo')) {
             $path = $request->file('site_logo')->store('logos', 'public');
             $validated['site_logo'] = asset('storage/' . $path);
+        } elseif ($request->filled('site_logo')) {
+            $validated['site_logo'] = $request->input('site_logo'); // string URL
         }
+
 
         // 🔄 Sozlamalarni saqlash
         foreach ($validated as $key => $value) {

@@ -11,6 +11,10 @@ use App\Http\Controllers\API\V1\CartController;
 use App\Http\Controllers\API\V1\OrderController;
 use App\Http\Controllers\API\V1\PromocodeController;
 use App\Http\Controllers\API\V1\SettingController;
+use App\Models\AdditionalService;
+use App\Models\Azot;
+use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -90,6 +94,19 @@ Route::group(['prefix' => 'api/v1'], function () {
             Route::post('/', [TelegramMessageController::class, 'store'])->name('store');
             Route::get('/{batch}', [TelegramMessageController::class, 'show'])->name('show');
         });
+    });
+
+    Route::get('/stats', function () {
+        $users = User::count();
+        $orders = Order::count();
+        $azots = Azot::count();
+        $services = AdditionalService::count();
+        return response()->json([
+            'users' => $users,
+            'orders' => $orders,
+            'azots' => $azots,
+            'services' => $services
+        ]);
     });
 
 });

@@ -66,7 +66,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $query->with(['azots', 'accessories', 'services'])->paginate($perPage),
+            'data' => $query->with(['azots', 'accessories', 'services', 'user'])->paginate($perPage),
         ]);
     }
 
