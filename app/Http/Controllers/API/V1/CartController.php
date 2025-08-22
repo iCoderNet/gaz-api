@@ -40,6 +40,7 @@ class CartController extends Controller
                     $priceType = AzotPriceType::where('id', $item->price_type_id)
                         ->where('azot_id', $item->product_id)
                         ->first();
+                    $priceTypes = AzotPriceType::where('azot_id', $item->product_id)->get();
 
                     if ($product && $priceType) {
                         $azots[] = [
@@ -47,8 +48,10 @@ class CartController extends Controller
                             'name'       => $product->title,
                             'price_type' => $priceType->name,
                             'price'      => $priceType->price,
+                            'price_type_id' => $priceType->id,
                             'quantity'   => $item->quantity,
-                            'product'    => $product
+                            'product'    => $product,
+                            'price_types' => $priceTypes
                         ];
                         $totalPrice += $priceType->price * $item->quantity;
                     }
@@ -62,7 +65,7 @@ class CartController extends Controller
                             'name'       => $product->name,
                             'price'      => $product->price,
                             'quantity'   => $item->quantity,
-                            'product'    => $product
+                            'product'    => $product,
                         ];
                         $totalPrice += $product->price * $item->quantity;
                     }
