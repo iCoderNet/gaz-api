@@ -396,6 +396,9 @@ class OrderController extends Controller
                 'total_price' => $allPrice , // promo & cargo keyin qo'shiladi
             ]);
 
+            // cartni tozalash
+            Cart::where('user_id', $order->user_id)->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Order created. Use /orders/finish to complete it.',
@@ -485,9 +488,6 @@ class OrderController extends Controller
             ]);
 
             SendOrderNotificationJob::dispatch($order->id, $order->user_id, $data);
-
-            // cartni tozalash
-            Cart::where('user_id', $order->user_id)->delete();
 
             return response()->json([
                 'success' => true,
