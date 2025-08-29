@@ -21,6 +21,7 @@ use App\Models\Promocode;
 use App\Models\Setting;
 use App\Models\User;
 use DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -299,7 +300,8 @@ class OrderController extends Controller
         $userId = User::where('tg_id', $data['tg_id'])->value('id');
 
         return DB::transaction(function () use ($data, $userId) {
-            $cartItems = Cart::where('user_id', $userId)->get();
+            // Cart itemlarni lock bilan olish (race condition oldini olish uchun)
+            $cartItems = Cart::where('user_id', $userId)->lockForUpdate()->get();
 
             if ($cartItems->isEmpty()) {
                 return response()->json([
@@ -308,6 +310,70 @@ class OrderController extends Controller
                 ], 400);
             }
 
+            // Cart itemlarni pre-validation qilish
+            $validCartItems = collect();
+            $errors = [];
+
+            foreach ($cartItems as $item) {
+                $isValid = true;
+                $errorMsg = null;
+
+                if ($item->type === 'azot') {
+                    // Azot mavjudligini tekshirish
+                    $azot = Azot::where('id', $item->product_id)->where('status', 'active')->first();
+                    if (!$azot) {
+                        $isValid = false;
+                        $errorMsg = "Azot ID {$item->product_id} not found or inactive";
+                    }
+
+                    // Price type mavjudligini tekshirish
+                    if ($isValid) {
+                        $priceType = AzotPriceType::where('id', $item->price_type_id)
+                                                ->where('azot_id', $item->product_id)
+                                                ->first();
+                        if (!$priceType) {
+                            $isValid = false;
+                            $errorMsg = "Price type ID {$item->price_type_id} not found for azot {$item->product_id}";
+                        }
+                    }
+                } elseif ($item->type === 'accessuary') {
+                    $accessory = Accessory::where('id', $item->product_id)->where('status', 'active')->first();
+                    if (!$accessory) {
+                        $isValid = false;
+                        $errorMsg = "Accessory ID {$item->product_id} not found or inactive";
+                    }
+                } elseif ($item->type === 'service') {
+                    $service = AdditionalService::where('id', $item->product_id)->where('status', 'active')->first();
+                    if (!$service) {
+                        $isValid = false;
+                        $errorMsg = "Service ID {$item->product_id} not found or inactive";
+                    }
+                }
+
+                if ($isValid) {
+                    $validCartItems->push($item);
+                } else {
+                    $errors[] = $errorMsg;
+                    // Noto'g'ri cart itemni o'chirish
+                    $item->delete();
+                }
+            }
+
+            // Agar hech qanday valid item yo'q bo'lsa
+            if ($validCartItems->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid items in cart',
+                    'errors' => $errors,
+                ], 400);
+            }
+
+            // Agar ba'zi itemlar o'chirilgan bo'lsa, foydalanuvchiga xabar berish
+            if (!empty($errors)) {
+                Log::warning('Some cart items were invalid and removed:', $errors);
+            }
+
+            // Promocode hisoblash
             $promocodeId = null;
             $promoDiscount = 0;
             $promoStatus = 'not_found';
@@ -341,7 +407,7 @@ class OrderController extends Controller
                 }
             }
 
-            // faqat order yaratiladi, status = new
+            // Order yaratish
             $order = Order::create([
                 'user_id'      => $userId,
                 'promocode_id' => $promocodeId,
@@ -353,11 +419,13 @@ class OrderController extends Controller
                 'total_price'  => 0,
             ]);
 
-            // cart itemsni orderga yozib qo'yish
+            // Faqat valid cart itemlarni orderga yozish
             $allPrice = 0;
-            foreach ($cartItems as $item) {
+            foreach ($validCartItems as $item) {
                 if ($item->type === 'azot') {
-                    $priceType = AzotPriceType::findOrFail($item->price_type_id);
+                    $priceType = AzotPriceType::where('id', $item->price_type_id)
+                                            ->where('azot_id', $item->product_id)
+                                            ->first();
                     $price = $priceType->price;
                     $total = $price * $item->quantity;
 
@@ -372,7 +440,8 @@ class OrderController extends Controller
                 }
 
                 if ($item->type === 'accessuary') {
-                    $price = Accessory::findOrFail($item->product_id)->price;
+                    $accessory = Accessory::find($item->product_id);
+                    $price = $accessory->price;
                     $total = $price * $item->quantity;
 
                     OrderAccessory::create([
@@ -386,7 +455,8 @@ class OrderController extends Controller
                 }
 
                 if ($item->type === 'service') {
-                    $price = AdditionalService::findOrFail($item->product_id)->price;
+                    $service = AdditionalService::find($item->product_id);
+                    $price = $service->price;
                     $total = $price * $item->quantity;
 
                     OrderService::create([
@@ -402,17 +472,27 @@ class OrderController extends Controller
 
             $order->update([
                 'all_price'   => $allPrice,
-                'total_price' => $allPrice - $promoDiscount , // promo & cargo keyin qo'shiladi
+                'total_price' => $allPrice - $promoDiscount,
             ]);
 
-            // cartni tozalash
+            // Cartni tozalash
             Cart::where('user_id', $order->user_id)->delete();
 
-            return response()->json([
+            $responseData = [
                 'success' => true,
                 'message' => 'Order created. Use /orders/finish to complete it.',
                 'data'    => $order->load(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user']),
-            ], 201);
+            ];
+
+            // Agar ba'zi itemlar o'chirilgan bo'lsa, warning qo'shish
+            if (!empty($errors)) {
+                $responseData['warnings'] = [
+                    'Some invalid items were removed from cart',
+                    'errors' => $errors
+                ];
+            }
+
+            return response()->json($responseData, 201);
         });
     }
 
