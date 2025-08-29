@@ -310,9 +310,11 @@ class OrderController extends Controller
 
             $promocodeId = null;
             $promoDiscount = 0;
+            $promoStatus = 'not_found';
             if (!empty($data['promocode'])) {
                 $promo = Promocode::where('promocode', $data['promocode'])->first();
                 $promocodeId = $promo ? $promo->id : null;
+                $promoStatus = 'exist';
                 if ($promo && $promo->status === 'active') {
                     $now = now();
                     if ($promo->type === 'countable') {
@@ -321,6 +323,9 @@ class OrderController extends Controller
                         if ($maxUsable > 0 && $used < $maxUsable) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
                             $promo->increment('used_count');
+                            $promoStatus = 'active';
+                        } else {
+                            $promoStatus = 'limit_reached';
                         }
                     }
                     if ($promo->type === 'fixed-term') {
@@ -328,6 +333,9 @@ class OrderController extends Controller
                         $endOk   = !$promo->end_date   || $now->lte($promo->end_date);
                         if ($startOk && $endOk) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
+                            $promoStatus = 'active';
+                        } else {
+                            $promoStatus = 'expired';
                         }
                     }
                 }
@@ -337,9 +345,10 @@ class OrderController extends Controller
             $order = Order::create([
                 'user_id'      => $userId,
                 'promocode_id' => $promocodeId,
+                'promo_status' => $promoStatus,
                 'payment_type' => $data['payment_type'] ?? null,
                 'status'       => 'new',
-                'promo_price'  => 0,
+                'promo_price'  => $promoDiscount,
                 'all_price'    => 0,
                 'total_price'  => 0,
             ]);
@@ -393,7 +402,7 @@ class OrderController extends Controller
 
             $order->update([
                 'all_price'   => $allPrice,
-                'total_price' => $allPrice , // promo & cargo keyin qo'shiladi
+                'total_price' => $allPrice - $promoDiscount , // promo & cargo keyin qo'shiladi
             ]);
 
             // cartni tozalash
