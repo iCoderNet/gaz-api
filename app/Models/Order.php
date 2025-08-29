@@ -28,15 +28,6 @@ class Order extends Model
         return $statuses[$this->status] ?? $this->status;
     }
 
-    public function toArray()
-    {
-        $array = parent::toArray();
-        $array['status_code'] = $this->status;
-        $array['status'] = $this->status_text;
-        
-        return $array;
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class);
