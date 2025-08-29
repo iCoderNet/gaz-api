@@ -18,4 +18,9 @@ class OrderAzot extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function azot()
+    {
+        return $this->belongsTo(Azot::class);
+    }
 }

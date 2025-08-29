@@ -18,4 +18,9 @@ class OrderAccessory extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function accessory()
+    {
+        return $this->belongsTo(Accessory::class);
+    }
 }

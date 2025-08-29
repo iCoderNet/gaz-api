@@ -18,4 +18,9 @@ class OrderService extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function service()
+    {
+        return $this->belongsTo(AdditionalService::class, 'additional_service_id');
+    }
 }

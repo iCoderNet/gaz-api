@@ -66,7 +66,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $query->with(['azots', 'accessories', 'services', 'user'])->paginate($perPage),
+            'data' => $query->with(['azots.azot', 'accessories.accessory', 'services.service', 'user'])->paginate($perPage),
         ]);
     }
 
@@ -189,7 +189,7 @@ class OrderController extends Controller
                 'total_price' => max($allPrice + ($data['cargo_price'] ?? 0) - $promoDiscount, 0),
             ]);
 
-            return response()->json($order->load(['azots', 'accessories', 'services', 'promocode', 'user']), 201);
+            return response()->json($order->load(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user']), 201);
         });
     }
 
@@ -197,7 +197,7 @@ class OrderController extends Controller
     {
         $order = Order::where('id', $id)
               ->where('status', '!=', 'deleted')
-              ->with(['azots', 'accessories', 'services', 'promocode', 'user'])
+              ->with(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user'])
               ->first();
 
         if (!$order) {
@@ -393,13 +393,13 @@ class OrderController extends Controller
 
             $order->update([
                 'all_price'   => $allPrice,
-                'total_price' => $allPrice - $promoDiscount, // promo & cargo keyin qo'shiladi
+                'total_price' => $allPrice , // promo & cargo keyin qo'shiladi
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Order created. Use /orders/finish to complete it.',
-                'data'    => $order->load(['azots', 'accessories', 'services', 'promocode', 'user']),
+                'data'    => $order->load(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user']),
             ], 201);
         });
     }
@@ -492,7 +492,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order finished and set to pending.',
-                'data'    => $order->fresh(['azots', 'accessories', 'services', 'promocode', 'user']),
+                'data'    => $order->fresh(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user']),
             ]);
         });
     }
