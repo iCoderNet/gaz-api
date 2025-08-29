@@ -279,7 +279,7 @@ class OrderController extends Controller
                 $q->where('tg_id', $data['tg_id']);
             })
             ->where('status', '!=', 'deleted')
-            ->with(['azots', 'accessories', 'services'])
+            ->with(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user'])
             ->orderBy('id', 'desc')
             ->get();
 
