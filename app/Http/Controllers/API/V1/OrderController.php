@@ -75,6 +75,7 @@ class OrderController extends Controller
         $data = $request->validate([
             'user_id'      => 'required|exists:users,id',
             'promocode_id' => 'nullable|exists:promocodes,id',
+            'payment_type' => 'nullable|string|max:255',
 
             'phone'        => 'nullable|string|max:255',
             'address'      => 'nullable|string',
@@ -99,6 +100,7 @@ class OrderController extends Controller
             $order = Order::create([
                 'user_id'     => $data['user_id'],
                 'promocode_id'=> $data['promocode_id'] ?? null,
+                'payment_type'=> $data['payment_type'] ?? null,
                 'phone'       => $data['phone'] ?? null,
                 'address'     => $data['address'] ?? null,
                 'comment'     => $data['comment'] ?? null,
@@ -233,6 +235,7 @@ class OrderController extends Controller
 
         $data = $request->validate([
             'status'       => ['nullable', Rule::in(['new','pending','accepted','rejected','completed'])],
+            'payment_type' => 'nullable|string|max:255',
         ]);
 
         $order->update($data);
@@ -244,13 +247,11 @@ class OrderController extends Controller
         ]);
     }
 
-
     public function destroy($id)
     {
         $order = Order::where('id', $id)
               ->where('status', '!=', 'deleted')
               ->first();
-
 
         if (!$order) {
             return response()->json([
@@ -291,11 +292,8 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'tg_id'      => 'required|exists:users,tg_id',
-            'promocode' => 'nullable|exists:promocodes,promocode',
-            'phone'        => 'nullable|string|max:255',
-            'address'      => 'nullable|string',
-            'comment'      => 'nullable|string',
-            'cargo_with'  => 'nullable|boolean',
+            'promocode'  => 'nullable|exists:promocodes,promocode',
+            'payment_type' => 'nullable|string|max:255',
         ]);
 
         $userId = User::where('tg_id', $data['tg_id'])->value('id');
@@ -310,24 +308,44 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            $cargoPrice = !empty($data['cargo_with']) ? Setting::get('cargo_price', 500) : 0;
+            $promocodeId = null;
+            $promoDiscount = 0;
+            if (!empty($data['promocode'])) {
+                $promo = Promocode::where('promocode', $data['promocode'])->first();
+                $promocodeId = $promo ? $promo->id : null;
+                if ($promo && $promo->status === 'active') {
+                    $now = now();
+                    if ($promo->type === 'countable') {
+                        $maxUsable = $promo->countable ?? 0;
+                        $used = $promo->used_count ?? 0;
+                        if ($maxUsable > 0 && $used < $maxUsable) {
+                            $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
+                            $promo->increment('used_count');
+                        }
+                    }
+                    if ($promo->type === 'fixed-term') {
+                        $startOk = !$promo->start_date || $now->gte($promo->start_date);
+                        $endOk   = !$promo->end_date   || $now->lte($promo->end_date);
+                        if ($startOk && $endOk) {
+                            $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
+                        }
+                    }
+                }
+            }
 
-
+            // faqat order yaratiladi, status = new
             $order = Order::create([
-                'user_id'     => $userId,
-                'promocode_id'=> $data['promocode_id'] ?? null,
-                'phone'       => $data['phone'] ?? null,
-                'address'     => $data['address'] ?? null,
-                'comment'     => $data['comment'] ?? null,
-                'cargo_price' => $cargoPrice,
-                'promo_price' => 0,
-                'all_price'   => 0,
-                'total_price' => 0,
-                'status'      => 'new',
+                'user_id'      => $userId,
+                'promocode_id' => $promocodeId,
+                'payment_type' => $data['payment_type'] ?? null,
+                'status'       => 'new',
+                'promo_price'  => 0,
+                'all_price'    => 0,
+                'total_price'  => 0,
             ]);
 
+            // cart itemsni orderga yozib qo'yish
             $allPrice = 0;
-
             foreach ($cartItems as $item) {
                 if ($item->type === 'azot') {
                     $priceType = AzotPriceType::findOrFail($item->price_type_id);
@@ -341,7 +359,6 @@ class OrderController extends Controller
                         'price'    => $price,
                         'total_price' => $total,
                     ]);
-
                     $allPrice += $total;
                 }
 
@@ -356,7 +373,6 @@ class OrderController extends Controller
                         'price' => $price,
                         'total_price' => $total,
                     ]);
-
                     $allPrice += $total;
                 }
 
@@ -371,33 +387,84 @@ class OrderController extends Controller
                         'price' => $price,
                         'total_price' => $total,
                     ]);
-
                     $allPrice += $total;
                 }
             }
 
-            // PROMOCODE hisoblash
+            $order->update([
+                'all_price'   => $allPrice,
+                'total_price' => $allPrice - $promoDiscount, // promo & cargo keyin qo'shiladi
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order created. Use /orders/finish to complete it.',
+                'data'    => $order->load(['azots', 'accessories', 'services', 'promocode', 'user']),
+            ], 201);
+        });
+    }
+
+    public function finish(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'phone'       => 'nullable|string|max:255',
+            'address'     => 'nullable|string',
+            'comment'     => 'nullable|string',
+            'cargo_with'  => 'nullable|boolean',
+            'payment_type' => 'nullable|string|max:255',
+            'service_ids' => 'nullable|array',
+            'service_ids.*' => 'exists:additional_services,id',
+        ]);
+
+        if ($order->status !== 'new') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order already finished or invalid status',
+            ], 400);
+        }
+
+        return DB::transaction(function () use ($data, $order) {
+            $cargoPrice = !empty($data['cargo_with']) ? Setting::get('cargo_price', 500) : 0;
+
+            // Yangi servicelarni qo'shish
+            $additionalPrice = 0;
+            if (!empty($data['service_ids'])) {
+                foreach ($data['service_ids'] as $serviceId) {
+                    $service = AdditionalService::findOrFail($serviceId);
+                    $price = $service->price;
+                    
+                    OrderService::create([
+                        'order_id' => $order->id,
+                        'additional_service_id' => $serviceId,
+                        'count' => 1, // count doim 1
+                        'price' => $price,
+                        'total_price' => $price,
+                    ]);
+                    
+                    $additionalPrice += $price;
+                }
+            }
+
+            // Yangi all_price ni hisoblash
+            $newAllPrice = $order->all_price + $additionalPrice;
+
+            // PROMOCODEni qayta hisoblash
             $promoDiscount = 0;
             if ($order->promocode_id) {
                 $promo = Promocode::find($order->promocode_id);
-
                 if ($promo && $promo->status === 'active') {
                     $now = now();
-
                     if ($promo->type === 'countable') {
                         $maxUsable = $promo->countable ?? 0;
                         $used = $promo->used_count ?? 0;
-
                         if ($maxUsable > 0 && $used < $maxUsable) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
                             $promo->increment('used_count');
                         }
                     }
-
                     if ($promo->type === 'fixed-term') {
                         $startOk = !$promo->start_date || $now->gte($promo->start_date);
                         $endOk   = !$promo->end_date   || $now->lte($promo->end_date);
-
                         if ($startOk && $endOk) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
                         }
@@ -405,24 +472,28 @@ class OrderController extends Controller
                 }
             }
 
-
-            // Yakuniy hisob
             $order->update([
-                'all_price'   => $allPrice,
+                'phone'       => $data['phone'] ?? null,
+                'address'     => $data['address'] ?? null,
+                'comment'     => $data['comment'] ?? null,
+                'payment_type' => $data['payment_type'] ?? $order->payment_type,
+                'cargo_price' => $cargoPrice,
                 'promo_price' => $promoDiscount,
-                'total_price' => max($allPrice + ($cargoPrice ?? 0) - $promoDiscount, 0),
+                'all_price'   => $newAllPrice, // yangilangan all_price
+                'total_price' => max($newAllPrice + $cargoPrice - $promoDiscount, 0),
+                'status'      => 'pending',
             ]);
 
-            SendOrderNotificationJob::dispatch($order->id, $userId, $data);
+            SendOrderNotificationJob::dispatch($order->id, $order->user_id, $data);
 
-            // Cartni tozalash
-            Cart::where('user_id', $userId)->delete();
+            // cartni tozalash
+            Cart::where('user_id', $order->user_id)->delete();
 
             return response()->json([
                 'success' => true,
-                'data'    => $order->load(['azots', 'accessories', 'services', 'promocode', 'user']),
-            ], 201);
+                'message' => 'Order finished and set to pending.',
+                'data'    => $order->fresh(['azots', 'accessories', 'services', 'promocode', 'user']),
+            ]);
         });
     }
-
 }
