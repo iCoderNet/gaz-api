@@ -5,7 +5,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,9 +24,22 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $e, Request $request) {
+            $statusCode = 500; // default
+
+            if ($e instanceof ValidationException) {
+                $statusCode = 422;
+            } elseif ($e instanceof ModelNotFoundException) {
+                $statusCode = 404;
+            } elseif ($e instanceof QueryException) {
+                if ($e->getCode() === '23000') {
+                    $statusCode = 409; // Conflict (duplicate entry / foreign key violation)
+                }
+            }
+
             return response()->json([
-                'success'  => false,
+                'success' => false,
                 'message' => $e->getMessage(),
-            ], $e->getCode() ?: 400);
+            ], $statusCode);
         });
+
     })->create();
