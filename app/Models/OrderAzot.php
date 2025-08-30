@@ -9,6 +9,7 @@ class OrderAzot extends Model
     protected $fillable = [
         'order_id',
         'azot_id',
+        'price_type_id',
         'count',
         'price',
         'total_price',

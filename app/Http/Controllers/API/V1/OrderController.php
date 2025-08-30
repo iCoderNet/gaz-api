@@ -433,6 +433,7 @@ class OrderController extends Controller
                     OrderAzot::create([
                         'order_id' => $order->id,
                         'azot_id'  => $item->product_id,
+                        'price_type_id' => $item->price_type_id,
                         'count'    => $item->quantity,
                         'price'    => $price,
                         'total_price' => $total,
