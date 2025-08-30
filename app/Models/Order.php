@@ -12,6 +12,18 @@ class Order extends Model
         'status', 'payment_type', 'is_hidden_for_user'
     ];
 
+    protected $hidden = [
+        'is_hidden_for_user'
+    ];
+
+    protected $casts = [
+        'is_hidden_for_user' => 'boolean',
+        'cargo_price' => 'integer',
+        'promo_price' => 'integer',
+        'all_price' => 'integer',
+        'total_price' => 'integer',
+    ];
+
     protected $appends = ['status_text'];
 
     public function getStatusTextAttribute()
