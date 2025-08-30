@@ -15,6 +15,13 @@ class OrderAzot extends Model
         'total_price',
     ];
 
+    protected $appends = ['price_type_name'];
+
+    public function getPriceTypeNameAttribute()
+    {
+        return AzotPriceType::find($this->price_type_id)->name ?? null;
+    }
+
     public function order()
     {
         return $this->belongsTo(Order::class);
