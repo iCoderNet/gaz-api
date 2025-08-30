@@ -279,6 +279,7 @@ class OrderController extends Controller
                 $q->where('tg_id', $data['tg_id']);
             })
             ->where('status', '!=', 'deleted')
+            ->where('is_hidden_for_user', false) 
             ->with(['azots.azot', 'accessories.accessory', 'services.service', 'promocode', 'user'])
             ->orderBy('id', 'desc')
             ->get();
@@ -585,4 +586,38 @@ class OrderController extends Controller
             ]);
         });
     }
+
+    public function delete(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'tg_id' => 'required|string|exists:users,tg_id',
+        ]);
+
+        $user = User::where('tg_id', $data['tg_id'])->first();
+
+        if (!$user || $order->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action',
+            ], 403);
+        }
+
+        // Agar order new bo‘lsa → to‘liq delete (admin va userdan)
+        if ($order->status === 'new') {
+            $order->update(['status' => 'deleted']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Order fully deleted',
+            ]);
+        }
+
+        // Agar order oformlenie qilingan bo‘lsa → faqat userdan yashirish
+        $order->update(['is_hidden_for_user' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order hidden for user only',
+        ]);
+    }
+
 }

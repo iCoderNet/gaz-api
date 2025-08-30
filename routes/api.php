@@ -46,6 +46,7 @@ Route::group(['prefix' => 'api/v1'], function () {
         Route::post('/orders', [OrderController::class, 'publicOrder']);
         Route::post('/orders/create', [OrderController::class, 'publicStore']);
         Route::post('/orders/{order}/finish', [OrderController::class, 'finish']);
+        Route::post('/orders/{order}/delete', [OrderController::class, 'delete']);
 
         Route::prefix('cart')->group(function () {
             Route::post('/', [CartController::class, 'index']);
