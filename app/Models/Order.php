@@ -9,7 +9,7 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'promocode_id', 'phone', 'address', 'comment', 
         'cargo_price', 'promo_price', 'all_price', 'total_price', 
-        'status', 'payment_type'
+        'status', 'payment_type', 'is_hidden_for_user'
     ];
 
     protected $appends = ['status_text'];
