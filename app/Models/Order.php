@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\OrderHelper;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -63,5 +64,14 @@ class Order extends Model
     public function services()
     {
         return $this->hasMany(OrderService::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            $order->order_number = OrderHelper::generateUniqueOrderNumber();
+        });
     }
 }
