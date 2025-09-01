@@ -23,6 +23,7 @@ class Order extends Model
         'promo_price' => 'integer',
         'all_price' => 'integer',
         'total_price' => 'integer',
+        'order_number' => 'integer',
     ];
 
     protected $appends = ['status_text'];
