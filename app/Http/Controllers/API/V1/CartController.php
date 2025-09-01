@@ -38,7 +38,7 @@ class CartController extends Controller
                 case 'azot':
                     $product = Azot::find($item->product_id);
 
-                    if (!isset($service->status) || $service->status === 'deleted') {
+                    if (!isset($product->status) || $product->status === 'deleted') {
                         // Skip deleted products
                         continue 2; // Skip to the next item in the outer loop
                     }
