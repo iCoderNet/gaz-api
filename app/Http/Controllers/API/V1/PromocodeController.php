@@ -131,7 +131,7 @@ class PromocodeController extends Controller
             'promocode' => 'required|string',
         ]);
 
-        $promo = Promocode::where('promocode', $data['promocode'])
+        $promo = Promocode::whereRaw('BINARY promocode = ?', [$data['promocode']])
             ->where('status', 'active')
             ->first();
 

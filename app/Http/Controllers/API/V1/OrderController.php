@@ -416,6 +416,7 @@ class OrderController extends Controller
                 'payment_type' => $data['payment_type'] ?? null,
                 'status'       => 'new',
                 'promo_price'  => $promoDiscount,
+                'cargo_price'  => 0,
                 'all_price'    => 0,
                 'total_price'  => 0,
             ]);
