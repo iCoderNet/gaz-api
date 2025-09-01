@@ -379,7 +379,7 @@ class OrderController extends Controller
             $promoDiscount = 0;
             $promoStatus = 'not_found';
             if (!empty($data['promocode'])) {
-                $promo = Promocode::where('promocode', $data['promocode'])->first();
+                $promo = Promocode::whereRaw('BINARY promocode = ?', [$data['promocode']])->first();
                 $promocodeId = $promo ? $promo->id : null;
                 $promoStatus = 'exist';
                 if ($promo && $promo->status === 'active') {
