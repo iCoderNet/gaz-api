@@ -27,4 +27,15 @@ class Azot extends Model
         // Agar "storage:link" ishlatilgan bo‘lsa:
         return asset('storage/' . $this->image);
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 }
