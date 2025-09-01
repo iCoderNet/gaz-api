@@ -36,7 +36,13 @@ class CartController extends Controller
         foreach ($items as $item) {
             switch ($item->type) {
                 case 'azot':
-                    $product = Accessory::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
+                    $product = Azot::find($item->product_id);
+
+                    if (!isset($service->status) || $service->status === 'deleted') {
+                        // Skip deleted products
+                        continue 2; // Skip to the next item in the outer loop
+                    }
+                    
                     $priceType = AzotPriceType::where('id', $item->price_type_id)
                         ->where('azot_id', $item->product_id)
                         ->first();
@@ -58,9 +64,12 @@ class CartController extends Controller
                     break;
 
                 case 'accessuary':
-                    $product = Accessory::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
-
+                    $product = Accessory::find($item->product_id);
                     if ($product) {
+                        if (!isset($product->status) || $product->status === 'deleted') {
+                            // Skip deleted products
+                            continue 2; // Skip to the next item in the outer loop
+                        }
                         $accessories[] = [
                             'product_id' => $product->id,
                             'name'       => $product->name,
@@ -73,8 +82,12 @@ class CartController extends Controller
                     break;
 
                 case 'service':
-                    $service = AdditionalService::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
+                    $service = AdditionalService::find($item->product_id);
                     if ($service) {
+                        if (!isset($service->status) || $service->status === 'deleted') {
+                            // Skip deleted products
+                            continue 2; // Skip to the next item in the outer loop
+                        }
                         $services[] = [
                             'service_id' => $service->id,
                             'name'       => $service->name,
