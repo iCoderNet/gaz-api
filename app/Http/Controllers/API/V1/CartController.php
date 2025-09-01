@@ -36,7 +36,7 @@ class CartController extends Controller
         foreach ($items as $item) {
             switch ($item->type) {
                 case 'azot':
-                    $product = Azot::find($item->product_id)->where('status', '!=', 'deleted')->first();
+                    $product = Accessory::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
                     $priceType = AzotPriceType::where('id', $item->price_type_id)
                         ->where('azot_id', $item->product_id)
                         ->first();
@@ -58,7 +58,8 @@ class CartController extends Controller
                     break;
 
                 case 'accessuary':
-                    $product = Accessory::find($item->product_id)->where('status', '!=', 'deleted')->first();
+                    $product = Accessory::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
+
                     if ($product) {
                         $accessories[] = [
                             'product_id' => $product->id,
@@ -72,7 +73,7 @@ class CartController extends Controller
                     break;
 
                 case 'service':
-                    $service = AdditionalService::find($item->product_id)->where('status', '!=', 'deleted')->first();
+                    $service = AdditionalService::where('id', $item->product_id)->where('status', '!=', 'deleted')->first();
                     if ($service) {
                         $services[] = [
                             'service_id' => $service->id,
