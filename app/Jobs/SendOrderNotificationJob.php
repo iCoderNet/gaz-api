@@ -61,7 +61,7 @@ class SendOrderNotificationJob implements ShouldQueue
         $bot->sendMessage(
             Setting::get('chat_id', '@ninetydev'),
             "<b>$order_notification</b>\n\n" .
-            "Заказ: #{$order->id}\n" .
+            "Заказ: #{$order->order_number}\n" .
             "Пользователь: {$username} | ID: {$userData->tg_id}\n" .
             "Телефон: {$phone}\n" .
             "Адрес: {$address}\n" .
