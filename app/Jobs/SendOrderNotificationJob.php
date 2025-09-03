@@ -27,6 +27,21 @@ class SendOrderNotificationJob implements ShouldQueue
         $this->data = $data;
     }
 
+    private function PricePipe($value): string
+    {
+        if ($value === null || $value === '') {
+            return '0';
+        }
+
+        $num = floatval($value);
+        if (!is_numeric($num)) {
+            return strval($value);
+        }
+
+        return number_format($num, 0, '.', ' ');
+    }
+
+
     public function handle()
     {
         $userData = User::find($this->userId);
@@ -51,7 +66,7 @@ class SendOrderNotificationJob implements ShouldQueue
             "Телефон: {$phone}\n" .
             "Адрес: {$address}\n" .
             "Комментарий: {$comment}\n" .
-            "Итоговая цена: {$order->total_price}"
+            "Итоговая цена: ". $this->PricePipe($order->total_price) . " ₽"
         );
     }
 }
