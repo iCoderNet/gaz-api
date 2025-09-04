@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticationController extends Controller
@@ -17,7 +18,9 @@ class AuthenticationController extends Controller
             'tg_id' => 'required|string',
         ]);
 
-        $user = User::where('tg_id', $data['tg_id'])->first();
+        $user = User::where('tg_id', $data['tg_id'])
+                    ->where('status', 'active')
+                    ->first();
 
         return response()->json([
             'success' => true,
@@ -33,8 +36,20 @@ class AuthenticationController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'tg_id'    => 'required|string|unique:users,tg_id',
-            'phone'    => 'nullable|string|unique:users,phone',
+            'tg_id' => [
+                'required',
+                'string',
+                Rule::unique('users', 'tg_id')->where(function ($query) {
+                    return $query->where('status', '!=', 'deleted');
+                }),
+            ],
+            'phone' => [
+                'nullable',
+                'string',
+                Rule::unique('users', 'phone')->where(function ($query) {
+                    return $query->where('status', '!=', 'deleted');
+                }),
+            ],
             'username' => 'nullable|string|max:255',
             'address'  => 'nullable|string',
         ]);
@@ -44,6 +59,7 @@ class AuthenticationController extends Controller
             'phone'    => $data['phone'] ?? null,
             'username' => $data['username'] ?? null,
             'address'  => $data['address'] ?? null,
+            'status'   => 'active',
         ]);
 
         return response()->json([
