@@ -51,12 +51,14 @@ class OrderController extends Controller
         $query = Order::where('status', '!=', 'deleted');
 
         if ($search) {
-            $query->where('id', $search)
-                  ->orWhereHas('user', function ($q) use ($search) {
-                      $q->where('tg_id', 'like', "%$search%")
-                        ->orWhere('phone', 'like', "%$search%")
-                        ->orWhere('username', 'like', "%$search%");
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('tg_id', 'like', "%$search%")
+                            ->orWhere('phone', 'like', "%$search%")
+                            ->orWhere('username', 'like', "%$search%");
+                });
+            });
         }
 
         if ($status) {

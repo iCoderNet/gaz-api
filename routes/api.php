@@ -7,6 +7,7 @@ use App\Http\Controllers\API\V1\AzotController;
 use App\Http\Controllers\API\V1\TelegramMessageController;
 use App\Http\Controllers\API\V1\UserController;
 use App\Http\Controllers\API\V1\AzotPriceTypeController;
+use App\Http\Controllers\API\V1\CallbackRequestController;
 use App\Http\Controllers\API\V1\CartController;
 use App\Http\Controllers\API\V1\OrderController;
 use App\Http\Controllers\API\V1\PromocodeController;
@@ -59,6 +60,7 @@ Route::group(['prefix' => 'api/v1'], function () {
             Route::post('/clear', [CartController::class, 'clear']);
         });
 
+        Route::post('/callback-requests', [CallbackRequestController::class, 'store']);
     });
     
 
@@ -95,6 +97,12 @@ Route::group(['prefix' => 'api/v1'], function () {
             Route::get('/', [TelegramMessageController::class, 'index'])->name('index');
             Route::post('/', [TelegramMessageController::class, 'store'])->name('store');
             Route::get('/{batch}', [TelegramMessageController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('callback-requests')->group(function () {
+            Route::get('/', [CallbackRequestController::class, 'index']);
+            Route::patch('/{id}/status', [CallbackRequestController::class, 'updateStatus']);
+            Route::delete('/{id}', [CallbackRequestController::class, 'destroy']);
         });
     });
 
