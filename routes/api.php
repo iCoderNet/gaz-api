@@ -99,10 +99,10 @@ Route::group(['prefix' => 'api/v1'], function () {
     });
 
     Route::get('/stats', function () {
-        $users = User::count();
-        $orders = Order::count();
-        $azots = Azot::count();
-        $services = AdditionalService::count();
+        $users = User::where('status', '!=', 'deleted')->count();
+        $orders = Order::where('status', '!=', 'deleted')->count();
+        $azots = Azot::where('status', '!=', 'deleted')->count();
+        $services = AdditionalService::where('status', '!=', 'deleted')->count();
         return response()->json([
             'users' => $users,
             'orders' => $orders,
