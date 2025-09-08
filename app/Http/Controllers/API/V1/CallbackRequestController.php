@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendCallbackRequestNotificationJob;
 use App\Models\CallbackRequests;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -62,6 +63,9 @@ class CallbackRequestController extends Controller
             'phone'   => $request->phone,
             'status'  => 'new',
         ]);
+
+        // Telegram notification yuborish
+        SendCallbackRequestNotificationJob::dispatch($callback->id);
 
         return response()->json([
             'message' => 'Callback request created successfully',
