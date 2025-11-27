@@ -20,13 +20,14 @@ class SettingController extends Controller
             'bot_token' => "TOKEN",
             'order_notification' => "Новый заказ создан ✅",
             'chat_id' => "ID NUMBER",
-
+            'enable_roulette' => false,
+            'roulette_frequency' => 'per_order',
         ];
 
         $settings = Setting::whereIn('key', array_keys($defaults))->pluck('value', 'key')->toArray();
 
         // Boolean qiymatlarni decode qilish
-        foreach (['enable_promocode', 'require_phone_on_order'] as $boolKey) {
+        foreach (['enable_promocode', 'require_phone_on_order', 'enable_roulette'] as $boolKey) {
             if (isset($settings[$boolKey])) {
                 $settings[$boolKey] = json_decode($settings[$boolKey]);
             }
@@ -54,6 +55,8 @@ class SettingController extends Controller
             'bot_token' => 'nullable|string',
             'order_notification' => 'nullable|string|max:255',
             'chat_id' => 'nullable|string',
+            'enable_roulette' => 'nullable|boolean',
+            'roulette_frequency' => 'nullable|in:per_order,daily',
         ]);
 
         // 🖼️ Rasmni saqlash
@@ -86,12 +89,14 @@ class SettingController extends Controller
             'site_title' => 'My Site',
             'site_logo' => asset('images/default-logo.png'),
             'cargo_price' => 500,
+            'enable_roulette' => false,
+            'roulette_frequency' => 'per_order',
         ];
 
         $settings = Setting::whereIn('key', array_keys($defaults))->pluck('value', 'key')->toArray();
 
         // Boolean qiymatlarni decode qilish
-        foreach (['enable_promocode', 'require_phone_on_order'] as $boolKey) {
+        foreach (['enable_promocode', 'require_phone_on_order', 'enable_roulette'] as $boolKey) {
             if (isset($settings[$boolKey])) {
                 $settings[$boolKey] = json_decode($settings[$boolKey]);
             }

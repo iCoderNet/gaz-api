@@ -28,10 +28,10 @@ class OrderController extends Controller
     public function index()
     {
         $validator = Validator::make(request()->all(), [
-            'per_page'   => 'integer|min:1|max:100',
-            'search'     => 'string|nullable',
-            'status'     => 'in:new,pending,accepted,rejected,completed',
-            'sort_by'    => 'in:id,all_price,total_price,status,created_at',
+            'per_page' => 'integer|min:1|max:100',
+            'search' => 'string|nullable',
+            'status' => 'in:new,pending,accepted,rejected,completed',
+            'sort_by' => 'in:id,all_price,total_price,status,created_at',
             'sort_order' => 'in:asc,desc',
         ]);
 
@@ -42,10 +42,10 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $perPage   = request()->get('per_page', 10);
-        $search    = request()->get('search');
-        $status    = request()->get('status');
-        $sortBy    = request()->get('sort_by', 'id');
+        $perPage = request()->get('per_page', 10);
+        $search = request()->get('search');
+        $status = request()->get('status');
+        $sortBy = request()->get('sort_by', 'id');
         $sortOrder = request()->get('sort_order', 'desc');
 
         $query = Order::where('status', '!=', 'deleted');
@@ -53,11 +53,11 @@ class OrderController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('id', $search)
-                ->orWhereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('tg_id', 'like', "%$search%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('tg_id', 'like', "%$search%")
                             ->orWhere('phone', 'like', "%$search%")
                             ->orWhere('username', 'like', "%$search%");
-                });
+                    });
             });
         }
 
@@ -76,42 +76,42 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'user_id'      => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
             'promocode_id' => 'nullable|exists:promocodes,id',
             'payment_type' => 'nullable|string|max:255',
 
-            'phone'        => 'nullable|string|max:255',
-            'address'      => 'nullable|string',
-            'comment'      => 'nullable|string',
-            'cargo_price'  => 'nullable|numeric|min:0',
+            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
+            'comment' => 'nullable|string',
+            'cargo_price' => 'nullable|numeric|min:0',
 
-            'azots'        => 'array',
-            'azots.*.id'   => 'required|exists:azots,id',
+            'azots' => 'array',
+            'azots.*.id' => 'required|exists:azots,id',
             'azots.*.type_id' => 'required|exists:azot_price_types,id',
-            'azots.*.count'=> 'required|integer|min:1',
+            'azots.*.count' => 'required|integer|min:1',
 
-            'accessories'  => 'array',
+            'accessories' => 'array',
             'accessories.*.id' => 'required|exists:accessories,id',
-            'accessories.*.count'=> 'required|integer|min:1',
+            'accessories.*.count' => 'required|integer|min:1',
 
-            'services'     => 'array',
+            'services' => 'array',
             'services.*.id' => 'required|exists:additional_services,id',
-            'services.*.count'=> 'required|integer|min:1',
+            'services.*.count' => 'required|integer|min:1',
         ]);
 
         return DB::transaction(function () use ($data) {
             $order = Order::create([
-                'user_id'     => $data['user_id'],
-                'promocode_id'=> $data['promocode_id'] ?? null,
-                'payment_type'=> $data['payment_type'] ?? null,
-                'phone'       => $data['phone'] ?? null,
-                'address'     => $data['address'] ?? null,
-                'comment'     => $data['comment'] ?? null,
+                'user_id' => $data['user_id'],
+                'promocode_id' => $data['promocode_id'] ?? null,
+                'payment_type' => $data['payment_type'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+                'comment' => $data['comment'] ?? null,
                 'cargo_price' => $data['cargo_price'] ?? 0,
                 'promo_price' => 0,
-                'all_price'   => 0,
+                'all_price' => 0,
                 'total_price' => 0,
-                'status'      => 'new',
+                'status' => 'new',
             ]);
 
             $allPrice = 0;
@@ -125,9 +125,9 @@ class OrderController extends Controller
 
                     OrderAzot::create([
                         'order_id' => $order->id,
-                        'azot_id'  => $azotData['id'],
-                        'count'    => $azotData['count'],
-                        'price'    => $price,
+                        'azot_id' => $azotData['id'],
+                        'count' => $azotData['count'],
+                        'price' => $price,
                         'total_price' => $total,
                     ]);
 
@@ -187,7 +187,7 @@ class OrderController extends Controller
 
             // Yakuniy hisoblash (cargo_price ham qo'shiladi)
             $order->update([
-                'all_price'   => $allPrice,
+                'all_price' => $allPrice,
                 'promo_price' => $promoDiscount,
                 'total_price' => max($allPrice + ($data['cargo_price'] ?? 0) - $promoDiscount, 0),
             ]);
@@ -199,9 +199,9 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::where('id', $id)
-              ->where('status', '!=', 'deleted')
-              ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user'])
-              ->first();
+            ->where('status', '!=', 'deleted')
+            ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user'])
+            ->first();
 
         if (!$order) {
             return response()->json([
@@ -212,15 +212,15 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $order,
+            'data' => $order,
         ]);
     }
 
     public function update(Request $request, $id)
     {
         $order = Order::where('id', $id)
-              ->where('status', '!=', 'deleted')
-              ->first();
+            ->where('status', '!=', 'deleted')
+            ->first();
 
         if ($order->status === 'deleted') {
             return response()->json([
@@ -237,7 +237,7 @@ class OrderController extends Controller
         }
 
         $data = $request->validate([
-            'status'       => ['nullable', Rule::in(['new','pending','accepted','rejected','completed'])],
+            'status' => ['nullable', Rule::in(['new', 'pending', 'accepted', 'rejected', 'completed'])],
             'payment_type' => 'nullable|string|max:255',
         ]);
 
@@ -246,15 +246,15 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Order updated successfully',
-            'data'    => $order,
+            'data' => $order,
         ]);
     }
 
     public function destroy($id)
     {
         $order = Order::where('id', $id)
-              ->where('status', '!=', 'deleted')
-              ->first();
+            ->where('status', '!=', 'deleted')
+            ->first();
 
         if (!$order) {
             return response()->json([
@@ -278,25 +278,25 @@ class OrderController extends Controller
         ]);
 
         $orders = Order::whereHas('user', function ($q) use ($data) {
-                $q->where('tg_id', $data['tg_id']);
-            })
+            $q->where('tg_id', $data['tg_id']);
+        })
             ->where('status', '!=', 'deleted')
-            ->where('is_hidden_for_user', false) 
+            ->where('is_hidden_for_user', false)
             ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user'])
             ->orderBy('id', 'desc')
             ->get();
 
         return response()->json([
             'success' => true,
-            'data'    => $orders,
+            'data' => $orders,
         ]);
     }
 
     public function publicStore(Request $request)
     {
         $data = $request->validate([
-            'tg_id'      => 'required|exists:users,tg_id',
-            'promocode'  => 'nullable|exists:promocodes,promocode',
+            'tg_id' => 'required|exists:users,tg_id',
+            'promocode' => 'nullable|exists:promocodes,promocode',
             'payment_type' => 'nullable|string|max:255',
         ]);
 
@@ -332,8 +332,8 @@ class OrderController extends Controller
                     // Price type mavjudligini tekshirish
                     if ($isValid) {
                         $priceType = AzotPriceType::where('id', $item->price_type_id)
-                                                ->where('azot_id', $item->product_id)
-                                                ->first();
+                            ->where('azot_id', $item->product_id)
+                            ->first();
                         if (!$priceType) {
                             $isValid = false;
                             $errorMsg = "Price type ID {$item->price_type_id} not found for azot {$item->product_id}";
@@ -399,7 +399,7 @@ class OrderController extends Controller
                     }
                     if ($promo->type === 'fixed-term') {
                         $startOk = !$promo->start_date || $now->gte($promo->start_date);
-                        $endOk   = !$promo->end_date   || $now->lte($promo->end_date);
+                        $endOk = !$promo->end_date || $now->lte($promo->end_date);
                         if ($startOk && $endOk) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
                             $promoStatus = 'active';
@@ -412,15 +412,15 @@ class OrderController extends Controller
 
             // Order yaratish
             $order = Order::create([
-                'user_id'      => $userId,
+                'user_id' => $userId,
                 'promocode_id' => $promocodeId,
                 'promo_status' => $promoStatus,
                 'payment_type' => $data['payment_type'] ?? null,
-                'status'       => 'new',
-                'promo_price'  => $promoDiscount,
-                'cargo_price'  => 0,
-                'all_price'    => 0,
-                'total_price'  => 0,
+                'status' => 'new',
+                'promo_price' => $promoDiscount,
+                'cargo_price' => 0,
+                'all_price' => 0,
+                'total_price' => 0,
             ]);
 
             // Faqat valid cart itemlarni orderga yozish
@@ -428,17 +428,17 @@ class OrderController extends Controller
             foreach ($validCartItems as $item) {
                 if ($item->type === 'azot') {
                     $priceType = AzotPriceType::where('id', $item->price_type_id)
-                                            ->where('azot_id', $item->product_id)
-                                            ->first();
+                        ->where('azot_id', $item->product_id)
+                        ->first();
                     $price = $priceType->price;
                     $total = $price * $item->quantity;
 
                     OrderAzot::create([
                         'order_id' => $order->id,
-                        'azot_id'  => $item->product_id,
+                        'azot_id' => $item->product_id,
                         'price_type_id' => $item->price_type_id,
-                        'count'    => $item->quantity,
-                        'price'    => $price,
+                        'count' => $item->quantity,
+                        'price' => $price,
                         'total_price' => $total,
                     ]);
                     $allPrice += $total;
@@ -476,17 +476,40 @@ class OrderController extends Controller
             }
 
             $order->update([
-                'all_price'   => $allPrice,
+                'all_price' => $allPrice,
                 'total_price' => $allPrice - $promoDiscount,
             ]);
 
             // Cartni tozalash
             Cart::where('user_id', $order->user_id)->delete();
 
+            // Ruletka integratsiyasi
+            $rouletteEnabled = Setting::where('key', 'enable_roulette')->value('value') === 'true';
+            $canSpin = false;
+
+            if ($rouletteEnabled) {
+                $frequency = Setting::where('key', 'roulette_frequency')->value('value') ?? 'per_order';
+
+                if ($frequency === 'daily') {
+                    // Bugun aylantirganmi tekshirish
+                    $hasSpunToday = \App\Models\RouletteSpin::where('user_id', $userId)
+                        ->whereDate('created_at', today())
+                        ->exists();
+                    $canSpin = !$hasSpunToday;
+                } else {
+                    // per_order - har buyurtmadan keyin ruxsat
+                    $canSpin = true;
+                }
+            }
+
             $responseData = [
                 'success' => true,
                 'message' => 'Order created. Use /orders/finish to complete it.',
-                'data'    => $order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
+                'data' => $order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
+                'roulette' => [
+                    'enabled' => $rouletteEnabled,
+                    'can_spin' => $canSpin,
+                ],
             ];
 
             // Agar ba'zi itemlar o'chirilgan bo'lsa, warning qo'shish
@@ -504,10 +527,10 @@ class OrderController extends Controller
     public function finish(Request $request, Order $order)
     {
         $data = $request->validate([
-            'phone'       => 'nullable|string|max:255',
-            'address'     => 'nullable|string',
-            'comment'     => 'nullable|string',
-            'cargo_with'  => 'nullable|boolean',
+            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
+            'comment' => 'nullable|string',
+            'cargo_with' => 'nullable|boolean',
             'payment_type' => 'nullable|string|max:255',
             'service_ids' => 'nullable|array',
             'service_ids.*' => 'exists:additional_services,id',
@@ -529,7 +552,7 @@ class OrderController extends Controller
                 foreach ($data['service_ids'] as $serviceId) {
                     $service = AdditionalService::findOrFail($serviceId);
                     $price = $service->price;
-                    
+
                     OrderService::create([
                         'order_id' => $order->id,
                         'additional_service_id' => $serviceId,
@@ -537,7 +560,7 @@ class OrderController extends Controller
                         'price' => $price,
                         'total_price' => $price,
                     ]);
-                    
+
                     $additionalPrice += $price;
                 }
             }
@@ -561,7 +584,7 @@ class OrderController extends Controller
                     }
                     if ($promo->type === 'fixed-term') {
                         $startOk = !$promo->start_date || $now->gte($promo->start_date);
-                        $endOk   = !$promo->end_date   || $now->lte($promo->end_date);
+                        $endOk = !$promo->end_date || $now->lte($promo->end_date);
                         if ($startOk && $endOk) {
                             $promoDiscount += is_numeric($promo->amount) ? $promo->amount : 0;
                         }
@@ -570,15 +593,15 @@ class OrderController extends Controller
             }
 
             $order->update([
-                'phone'       => $data['phone'] ?? null,
-                'address'     => $data['address'] ?? null,
-                'comment'     => $data['comment'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+                'comment' => $data['comment'] ?? null,
                 'payment_type' => $data['payment_type'] ?? $order->payment_type,
                 'cargo_price' => $cargoPrice,
                 'promo_price' => $promoDiscount,
-                'all_price'   => $newAllPrice, // yangilangan all_price
+                'all_price' => $newAllPrice, // yangilangan all_price
                 'total_price' => max($newAllPrice + $cargoPrice - $promoDiscount, 0),
-                'status'      => 'pending',
+                'status' => 'pending',
             ]);
 
             SendOrderNotificationJob::dispatch($order->id, $order->user_id, $data);
@@ -586,7 +609,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order finished and set to pending.',
-                'data'    => $order->fresh(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
+                'data' => $order->fresh(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
             ]);
         });
     }

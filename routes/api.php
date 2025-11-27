@@ -5,6 +5,8 @@ use App\Http\Controllers\API\V1\AdditionalServiceController;
 use App\Http\Controllers\API\V1\AuthenticationController;
 use App\Http\Controllers\API\V1\AzotController;
 use App\Http\Controllers\API\V1\TelegramMessageController;
+use App\Http\Controllers\API\V1\RouletteController;
+use App\Http\Controllers\API\V1\RouletteItemController;
 use App\Http\Controllers\API\V1\UserController;
 use App\Http\Controllers\API\V1\AzotPriceTypeController;
 use App\Http\Controllers\API\V1\CallbackRequestController;
@@ -23,7 +25,7 @@ Route::group(['prefix' => 'api/v1'], function () {
 
     /** Public routes **/
     Route::group(['prefix' => 'public'], function () {
-        
+
         Route::get('/ping', function () {
             return response()->json(['message' => 'pong']);
         });
@@ -61,8 +63,16 @@ Route::group(['prefix' => 'api/v1'], function () {
         });
 
         Route::post('/callback-requests', [CallbackRequestController::class, 'store']);
+
+        // Roulette public routes
+        Route::prefix('roulette')->group(function () {
+            Route::post('/can-spin', [RouletteController::class, 'canSpin']);
+            Route::post('/spin', [RouletteController::class, 'spin']);
+            Route::post('/my-spins', [RouletteController::class, 'userHistory']);
+            Route::get('/items', [RouletteItemController::class, 'index']);
+        });
     });
-    
+
 
 
     /**
@@ -103,6 +113,13 @@ Route::group(['prefix' => 'api/v1'], function () {
             Route::get('/', [CallbackRequestController::class, 'index']);
             Route::patch('/{id}/status', [CallbackRequestController::class, 'updateStatus']);
             Route::delete('/{id}', [CallbackRequestController::class, 'destroy']);
+        });
+
+        // Roulette admin routes
+        Route::apiResource('roulette-items', RouletteItemController::class);
+        Route::prefix('roulette')->group(function () {
+            Route::get('/history', [RouletteController::class, 'history']);
+            Route::get('/statistics', [RouletteController::class, 'statistics']);
         });
     });
 
