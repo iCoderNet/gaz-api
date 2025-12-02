@@ -207,6 +207,35 @@ class RouletteController extends Controller
 
         $spin->load(['rouletteItem.accessory', 'order']);
 
+        // Notifications
+        try {
+            // 1. Notify Admin (Immediate)
+            $admins = User::where('role', 'admin')->whereNotNull('tg_id')->get();
+            $adminMessage = "🎰 <b>Рулетка сыграна!</b>\n\n" .
+                "👤 Пользователь: {$user->username} ({$user->phone})\n" .
+                "🎁 Выигрыш: <b>{$selectedItem->title}</b>\n" .
+                "🆔 ID игры: {$spin->id}";
+
+            if ($request->order_id) {
+                $adminMessage .= "\n📦 ID заказа: {$request->order_id}";
+            }
+
+            $telegramService = new \App\Services\TelegramBotService();
+            foreach ($admins as $admin) {
+                $telegramService->sendMessage($admin->tg_id, $adminMessage);
+            }
+
+            // 2. Notify User (Delayed 3 seconds)
+            $userMessage = "🎉 Поздравляем!\n\n" .
+                "Вы выиграли <b>{$selectedItem->title}</b>! 🎁";
+
+            \App\Jobs\SendSingleTelegramMessageJob::dispatch($user->tg_id, $userMessage)
+                ->delay(now()->addSeconds(3));
+
+        } catch (\Exception $e) {
+            Log::error("Error sending roulette notifications: " . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Roulette spun successfully',

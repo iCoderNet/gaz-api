@@ -69,7 +69,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $query->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'user'])->paginate($perPage),
+            'data' => $query->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'user', 'rouletteSpin.rouletteItem'])->paginate($perPage),
         ]);
     }
 
@@ -192,7 +192,7 @@ class OrderController extends Controller
                 'total_price' => max($allPrice + ($data['cargo_price'] ?? 0) - $promoDiscount, 0),
             ]);
 
-            return response()->json($order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']), 201);
+            return response()->json($order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user', 'rouletteSpin.rouletteItem']), 201);
         });
     }
 
@@ -200,7 +200,7 @@ class OrderController extends Controller
     {
         $order = Order::where('id', $id)
             ->where('status', '!=', 'deleted')
-            ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user'])
+            ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user', 'rouletteSpin.rouletteItem'])
             ->first();
 
         if (!$order) {
@@ -282,7 +282,7 @@ class OrderController extends Controller
         })
             ->where('status', '!=', 'deleted')
             ->where('is_hidden_for_user', false)
-            ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user'])
+            ->with(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user', 'rouletteSpin.rouletteItem'])
             ->orderBy('id', 'desc')
             ->get();
 
@@ -505,7 +505,7 @@ class OrderController extends Controller
             $responseData = [
                 'success' => true,
                 'message' => 'Order created. Use /orders/finish to complete it.',
-                'data' => $order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
+                'data' => $order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user', 'rouletteSpin.rouletteItem']),
                 'roulette' => [
                     'enabled' => $rouletteEnabled,
                     'can_spin' => $canSpin,
@@ -609,7 +609,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order finished and set to pending.',
-                'data' => $order->fresh(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user']),
+                'data' => $order->fresh(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'promocode', 'user', 'rouletteSpin.rouletteItem']),
             ]);
         });
     }

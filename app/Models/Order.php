@@ -8,9 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $fillable = [
-        'user_id', 'promocode_id', 'phone', 'address', 'comment', 
-        'cargo_price', 'promo_price', 'all_price', 'total_price', 
-        'status', 'payment_type', 'is_hidden_for_user'
+        'user_id',
+        'promocode_id',
+        'phone',
+        'address',
+        'comment',
+        'cargo_price',
+        'promo_price',
+        'all_price',
+        'total_price',
+        'status',
+        'payment_type',
+        'is_hidden_for_user'
     ];
 
     protected $hidden = [
@@ -65,6 +74,11 @@ class Order extends Model
     public function services()
     {
         return $this->hasMany(OrderService::class);
+    }
+
+    public function rouletteSpin()
+    {
+        return $this->hasOne(RouletteSpin::class);
     }
 
     protected static function boot()
