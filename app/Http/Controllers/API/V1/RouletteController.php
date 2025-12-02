@@ -210,7 +210,6 @@ class RouletteController extends Controller
         // Notifications
         try {
             // 1. Notify Admin (Immediate)
-            $admins = User::where('role', 'admin')->whereNotNull('tg_id')->get();
             $adminMessage = "🎰 <b>Рулетка сыграна!</b>\n\n" .
                 "👤 Пользователь: {$user->username} ({$user->phone})\n" .
                 "🎁 Выигрыш: <b>{$selectedItem->title}</b>\n" .
@@ -221,9 +220,7 @@ class RouletteController extends Controller
             }
 
             $telegramService = new \App\Services\TelegramBotService();
-            foreach ($admins as $admin) {
-                $telegramService->sendMessage($admin->tg_id, $adminMessage);
-            }
+            $telegramService->sendMessage(Setting::get('chat_id', '@ninetydev'), $adminMessage);
 
             // 2. Notify User (Delayed 3 seconds)
             $userMessage = "🎉 Поздравляем!\n\n" .
