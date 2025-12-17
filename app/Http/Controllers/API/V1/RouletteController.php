@@ -134,7 +134,6 @@ class RouletteController extends Controller
         $validator = Validator::make($request->all(), [
             'tg_id' => 'required|string',
             'order_id' => 'nullable|exists:orders,id',
-            'is_forced' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -208,9 +207,9 @@ class RouletteController extends Controller
             ], 500);
         }
 
-        // Forced prize logic: Check if this is a forced spin
+        // Forced prize logic: Always check for forced rules first
         $selectedItem = null;
-        if ($request->is_forced && $request->order_id) {
+        if ($request->order_id) {
             $order = \App\Models\Order::with('azots.azot.priceTypes')->find($request->order_id);
 
             if ($order && $order->azots->isNotEmpty()) {
