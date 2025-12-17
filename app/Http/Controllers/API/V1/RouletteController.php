@@ -96,6 +96,18 @@ class RouletteController extends Controller
                         'frequency' => 'per_order',
                     ]);
                 }
+
+                // Check if order contains at least one azot (balloon)
+                $hasAzots = \App\Models\OrderAzot::where('order_id', $orderId)->exists();
+
+                if (!$hasAzots) {
+                    return response()->json([
+                        'success' => true,
+                        'can_spin' => false,
+                        'message' => 'Roulette is only available for orders with balloons (azots)',
+                        'frequency' => 'per_order',
+                    ]);
+                }
             } else {
                 return response()->json([
                     'success' => false,
@@ -122,6 +134,7 @@ class RouletteController extends Controller
         $validator = Validator::make($request->all(), [
             'tg_id' => 'required|string',
             'order_id' => 'nullable|exists:orders,id',
+            'is_forced' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -195,8 +208,44 @@ class RouletteController extends Controller
             ], 500);
         }
 
-        // Weighted random selection
-        $selectedItem = $this->weightedRandomSelection($items, $totalProbability);
+        // Forced prize logic: Check if this is a forced spin
+        $selectedItem = null;
+        if ($request->is_forced && $request->order_id) {
+            $order = \App\Models\Order::with('azots.azot.priceTypes')->find($request->order_id);
+
+            if ($order && $order->azots->isNotEmpty()) {
+                // Check each azot in the order for a forced rule
+                foreach ($order->azots as $orderAzot) {
+                    $priceType = $orderAzot->azot->priceTypes
+                        ->where('id', $orderAzot->price_type_id)
+                        ->first();
+
+                    if ($priceType) {
+                        $forcedRule = \App\Models\ForcedRouletteRule::active()
+                            ->where('azot_id', $orderAzot->azot_id)
+                            ->where('price_type_name', $priceType->name)
+                            ->with('rouletteItem')
+                            ->first();
+
+                        if ($forcedRule && $forcedRule->rouletteItem) {
+                            $selectedItem = $forcedRule->rouletteItem;
+                            Log::info("Forced roulette prize applied", [
+                                'rule_id' => $forcedRule->id,
+                                'azot_id' => $orderAzot->azot_id,
+                                'price_type' => $priceType->name,
+                                'prize' => $selectedItem->title,
+                            ]);
+                            break; // Exit loop once forced prize found
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no forced prize was found, use normal weighted random selection
+        if (!$selectedItem) {
+            $selectedItem = $this->weightedRandomSelection($items, $totalProbability);
+        }
 
         // Save the spin result
         $spin = RouletteSpin::create([
@@ -206,6 +255,28 @@ class RouletteController extends Controller
         ]);
 
         $spin->load(['rouletteItem.accessory', 'order']);
+
+        // Auto-add won prize to order if it's an accessory
+        if ($request->order_id && $selectedItem->accessory_id) {
+            try {
+                $order = \App\Models\Order::find($request->order_id);
+
+                // Add the won accessory to the order with 0 price
+                \App\Models\OrderAccessory::create([
+                    'order_id' => $order->id,
+                    'accessory_id' => $selectedItem->accessory_id,
+                    'count' => 1,
+                    'price' => 0,
+                    'total_price' => 0,
+                ]);
+
+                // Reload order with fresh data
+                $order->load(['azots.azot.priceTypes', 'accessories.accessory', 'services.service', 'rouletteSpin.rouletteItem']);
+                $spin->order = $order;
+            } catch (\Exception $e) {
+                Log::error("Error adding won prize to order: " . $e->getMessage());
+            }
+        }
 
         // Notifications
         try {

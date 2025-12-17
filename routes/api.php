@@ -7,6 +7,7 @@ use App\Http\Controllers\API\V1\AzotController;
 use App\Http\Controllers\API\V1\TelegramMessageController;
 use App\Http\Controllers\API\V1\RouletteController;
 use App\Http\Controllers\API\V1\RouletteItemController;
+use App\Http\Controllers\API\V1\ForcedRouletteRuleController;
 use App\Http\Controllers\API\V1\UserController;
 use App\Http\Controllers\API\V1\AzotPriceTypeController;
 use App\Http\Controllers\API\V1\CallbackRequestController;
@@ -117,9 +118,11 @@ Route::group(['prefix' => 'api/v1'], function () {
 
         // Roulette admin routes
         Route::apiResource('roulette-items', RouletteItemController::class);
+        Route::apiResource('forced-roulette-rules', ForcedRouletteRuleController::class);
         Route::prefix('roulette')->group(function () {
             Route::get('/history', [RouletteController::class, 'history']);
             Route::get('/statistics', [RouletteController::class, 'statistics']);
+            Route::get('/price-type-names', [ForcedRouletteRuleController::class, 'getPriceTypeNames']);
         });
     });
 
