@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class AzotPriceType extends Model
 {
-    protected $fillable = ['azot_id', 'name', 'price'];
+    protected $fillable = ['azot_id', 'name', 'price', 'roulette_allowed'];
+
+    protected $casts = [
+        'roulette_allowed' => 'boolean',
+    ];
 
     public function azot()
     {

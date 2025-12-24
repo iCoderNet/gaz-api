@@ -108,6 +108,25 @@ class RouletteController extends Controller
                         'frequency' => 'per_order',
                     ]);
                 }
+
+                // Check if any price type in the order is blocked from roulette
+                $order = \App\Models\Order::with('azots.azot.priceTypes')->find($orderId);
+                if ($order) {
+                    foreach ($order->azots as $orderAzot) {
+                        $priceType = $orderAzot->azot->priceTypes
+                            ->where('id', $orderAzot->price_type_id)
+                            ->first();
+
+                        if ($priceType && !$priceType->roulette_allowed) {
+                            return response()->json([
+                                'success' => true,
+                                'can_spin' => false,
+                                'message' => "Roulette is not available for orders with '{$priceType->name}' payment type",
+                                'frequency' => 'per_order',
+                            ]);
+                        }
+                    }
+                }
             } else {
                 return response()->json([
                     'success' => false,

@@ -7,6 +7,7 @@ use App\Http\Controllers\API\V1\AzotController;
 use App\Http\Controllers\API\V1\TelegramMessageController;
 use App\Http\Controllers\API\V1\RouletteController;
 use App\Http\Controllers\API\V1\RouletteItemController;
+use App\Http\Controllers\API\V1\RoulettePriceTypeController;
 use App\Http\Controllers\API\V1\ForcedRouletteRuleController;
 use App\Http\Controllers\API\V1\UserController;
 use App\Http\Controllers\API\V1\AzotPriceTypeController;
@@ -123,6 +124,8 @@ Route::group(['prefix' => 'api/v1'], function () {
             Route::get('/history', [RouletteController::class, 'history']);
             Route::get('/statistics', [RouletteController::class, 'statistics']);
             Route::get('/price-type-names', [ForcedRouletteRuleController::class, 'getPriceTypeNames']);
+            Route::get('/price-types', [RoulettePriceTypeController::class, 'index']);
+            Route::put('/price-types/{name}', [RoulettePriceTypeController::class, 'update']);
         });
     });
 
